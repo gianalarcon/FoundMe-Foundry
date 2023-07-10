@@ -43,9 +43,10 @@ contract FundMe {
     }
 
     function withdraw() public onlyOwner {
+        address[] memory funders = s_funders;
         for (
             uint256 funderIndex = 0;
-            funderIndex < s_funders.length;
+            funderIndex < funders.length;
             funderIndex++
         ) {
             address funder = s_funders[funderIndex];
@@ -84,5 +85,9 @@ contract FundMe {
 
     function getOwner() external view returns (address) {
         return i_owner;
+    }
+
+    function getPriceFeed() external view returns (AggregatorV3Interface) {
+        return s_priceFeed;
     }
 }

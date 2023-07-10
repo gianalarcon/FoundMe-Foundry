@@ -2,19 +2,22 @@
 pragma solidity ^0.8.18;
 
 import {Test, console} from "forge-std/Test.sol";
-import {FundMe} from "../src/FundMe.sol";
-import {DeployFundMe} from "../script/DeployFundMe.s.sol";
+import {FundMe} from "../../src/FundMe.sol";
+import {DeployFundMe} from "../../script/DeployFundMe.s.sol";
+import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
 
-contract FundMeTest is Test {
+contract FundMeTest is StdCheats, Test {
     FundMe fundMe;
+    HelperConfig public helperConfig;
+
     address USER = makeAddr("user");
     uint256 constant SEND_AMOUNT = 0.1 ether;
     uint256 constant STARTING_BALANCE = 10 ether;
 
     function setUp() external {
-        //fundMe = new FundMe(0x694AA1769357215DE4FAC081bf1f309aDC325306);
         DeployFundMe deployFundMe = new DeployFundMe();
-        fundMe = deployFundMe.run();
+        (fundMe, helperConfig) = deployFundMe.run();
         vm.deal(USER, STARTING_BALANCE);
     }
 
@@ -24,6 +27,12 @@ contract FundMeTest is Test {
 
     function testOwnerIsMsgSender() public {
         assertEq(fundMe.getOwner(), msg.sender);
+    }
+
+    function testPriceFeedSetCorrectly() public {
+        address retreivedPriceFeed = address(fundMe.getPriceFeed());
+        address expectedPriceFeed = helperConfig.activeNetworkConfig();
+        assertEq(retreivedPriceFeed, expectedPriceFeed);
     }
 
     function testFundFailsWithoutEnoughETH() public {
@@ -52,6 +61,7 @@ contract FundMeTest is Test {
     modifier funded() {
         vm.prank(USER);
         fundMe.fund{value: SEND_AMOUNT}();
+        assert(address(fundMe).balance > 0);
         _;
     }
 
